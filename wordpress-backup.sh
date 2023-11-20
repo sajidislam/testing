@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# Set the path to your WordPress installation
-WP_PATH="/path/to/wordpress"
+# Initialize default WP_PATH
+WP_PATH="/default/path/to/wordpress" # Update this with your default path
+BACKUP_DIR="/default/path/to/backups" # Update this with your default backup path
 
-# Set the backup directory (you can change this to a path of your choice)
-BACKUP_DIR="/path/to/backups"
+# Check for '-c' parameter
+if [ "$1" == "-c" ]; then
+    WP_PATH="."
+    BACKUP_DIR="./backups"
+fi
 
 # Create a new directory with the current date and time
 BACKUP_PATH="$BACKUP_DIR/backup_$(date +"%Y%m%d_%H%M%S")"
