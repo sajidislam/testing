@@ -52,9 +52,25 @@ DB_PASSWORD=$(cat wp-config.php | grep DB_PASSWORD | cut -d "'" -f 4)
 DB_HOST=$(cat wp-config.php | grep DB_HOST | cut -d "'" -f 4)
 
 # Perform MySQL dump
-if ! mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_PATH/${DOMAIN_NAME}_db_$(date +"%Y%m%d_%H%M%S").sql"; then
+SQL_DUMP_FILE="$BACKUP_PATH/${DOMAIN_NAME}_db_$(date +"%Y%m%d_%H%M%S").sql"
+mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$SQL_DUMP_FILE"
+
+# Check mysqldump exit status
+if [ $? -ne 0 ]; then
     echo "Error: MySQL dump failed." >&2
     exit 1
+fi
+
+# Verify that the SQL dump file is not empty
+if [ ! -s "$SQL_DUMP_FILE" ]; then
+    echo "Error: The SQL dump file is empty." >&2
+    exit 1
+fi
+
+# Optionally, check for common MySQL error strings in the dump file
+if grep -q "MySQL: " "$SQL_DUMP_FILE"; then
+    echo "Warning: Potential errors found in the SQL dump file." >&2
+    # You may choose to exit or alert the user and continue
 fi
 
 # Create a tar.gz archive of the WordPress directory
