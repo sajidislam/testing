@@ -4,6 +4,14 @@
 WP_PATH="/default/path/to/wordpress" # Update this with your default path
 BACKUP_DIR="/default/path/to/backups" # Update this with your default backup path
 
+# Check for essential commands
+for cmd in mysqldump tar wp; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "Error: $cmd is not installed." >&2
+        exit 1
+    fi
+done
+
 # Check for '-c' parameter
 if [ "$1" == "-c" ]; then
     WP_PATH="."
@@ -11,7 +19,10 @@ if [ "$1" == "-c" ]; then
 fi
 
 # Change to the WordPress directory
-cd "$WP_PATH"
+if ! cd "$WP_PATH"; then
+    echo "Error: Failed to change directory to $WP_PATH." >&2
+    exit 1
+fi
 
 # Use WP-CLI to get the site domain and process it for the filename
 SITE_URL=$(wp option get home 2>/dev/null)
@@ -29,7 +40,10 @@ fi
 
 # Create a new directory with the current date, time, and domain name
 BACKUP_PATH="$BACKUP_DIR/${DOMAIN_NAME}_$(date +"%Y%m%d_%H%M%S")"
-mkdir -p "$BACKUP_PATH"
+if ! mkdir -p "$BACKUP_PATH"; then
+    echo "Error: Failed to create backup directory $BACKUP_PATH." >&2
+    exit 1
+fi
 
 # Read database credentials from wp-config.php
 DB_NAME=$(cat wp-config.php | grep DB_NAME | cut -d "'" -f 4)
@@ -38,9 +52,15 @@ DB_PASSWORD=$(cat wp-config.php | grep DB_PASSWORD | cut -d "'" -f 4)
 DB_HOST=$(cat wp-config.php | grep DB_HOST | cut -d "'" -f 4)
 
 # Perform MySQL dump
-mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_PATH/${DOMAIN_NAME}_db_$(date +"%Y%m%d_%H%M%S").sql"
+if ! mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_PATH/${DOMAIN_NAME}_db_$(date +"%Y%m%d_%H%M%S").sql"; then
+    echo "Error: MySQL dump failed." >&2
+    exit 1
+fi
 
 # Create a tar.gz archive of the WordPress directory
-tar -czvf "$BACKUP_PATH/${DOMAIN_NAME}_wordpress_$(date +"%Y%m%d_%H%M%S").tar.gz" .
+if ! tar -czvf "$BACKUP_PATH/${DOMAIN_NAME}_wordpress_$(date +"%Y%m%d_%H%M%S").tar.gz" .; then
+    echo "Error: Failed to create tar.gz archive." >&2
+    exit 1
+fi
 
 echo "Backup completed successfully. Files located at $BACKUP_PATH"
