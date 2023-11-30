@@ -22,6 +22,13 @@ create_or_clear_database() {
     fi
 }
 
+# Function to extract a value from wp-config.php
+extract_from_wp_config() {
+    local key=$1
+    local file=$2
+    grep "define.*'$key'" "$file" | grep -v '\/\*' | cut -d "'" -f 4
+}
+
 # Check for '-c' parameter and set WP_PATH
 WP_PATH="/path/to/wordpress" # default path, update as needed
 if [ "$1" == "-c" ]; then 
@@ -41,10 +48,10 @@ fi
 
 # Extract database details from wp-config.php
 if [ -f "$WP_PATH/wp-config.php" ]; then
-    DB_NAME=$(cat "$WP_PATH/wp-config.php" | grep DB_NAME | cut -d "'" -f 4)
-    DB_USER=$(cat "$WP_PATH/wp-config.php" | grep DB_USER | cut -d "'" -f 4)
-    DB_PASSWORD=$(cat "$WP_PATH/wp-config.php" | grep DB_PASSWORD | cut -d "'" -f 4)
-    DB_HOST=$(cat "$WP_PATH/wp-config.php" | grep DB_HOST | cut -d "'" -f 4)
+    DB_NAME=$(extract_from_wp_config 'DB_NAME' "$WP_PATH/wp-config.php")
+    DB_USER=$(extract_from_wp_config 'DB_USER' "$WP_PATH/wp-config.php")
+    DB_PASSWORD=$(extract_from_wp_config 'DB_PASSWORD' "$WP_PATH/wp-config.php")
+    DB_HOST=$(extract_from_wp_config 'DB_HOST' "$WP_PATH/wp-config.php")
 else
     echo "Error: wp-config.php not found."
     exit 1
