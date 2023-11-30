@@ -71,6 +71,7 @@ fi
 if grep -q "MySQL: " "$SQL_DUMP_FILE"; then
     echo "Warning: Potential errors found in the SQL dump file." >&2
     # You may choose to exit or alert the user and continue
+    exit 1
 fi
 
 # Create a tar.gz archive of the WordPress directory
