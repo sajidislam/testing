@@ -29,6 +29,19 @@ extract_from_wp_config() {
     grep "define.*'$key'" "$file" | grep -v '\/\*' | cut -d "'" -f 4
 }
 
+# Function to update wp-config.php
+update_wp_config() {
+    local key=$1
+    local value=$2
+    local file=$3
+
+    # Escape forward slashes in the value for use in sed
+    local escaped_value=$(echo "$value" | sed 's/\//\\\//g')
+
+    # Update the wp-config.php file
+    sed -i "/define.*'$key'/s/'[^']*'/'$escaped_value'/" "$file"
+}
+
 # Check for '-c' parameter and set WP_PATH
 WP_PATH="/path/to/wordpress" # default path, update as needed
 if [ "$1" == "-c" ]; then 
@@ -48,9 +61,9 @@ fi
 
 # Extract database details from wp-config.php
 if [ -f "$WP_PATH/wp-config.php" ]; then
-    DB_NAME=$(extract_from_wp_config 'DB_NAME' "$WP_PATH/wp-config.php")
-    DB_USER=$(extract_from_wp_config 'DB_USER' "$WP_PATH/wp-config.php")
-    DB_PASSWORD=$(extract_from_wp_config 'DB_PASSWORD' "$WP_PATH/wp-config.php")
+    ORIGINAL_DB_NAME=$(extract_from_wp_config 'DB_NAME' "$WP_PATH/wp-config.php")
+    ORIGINAL_DB_USER=$(extract_from_wp_config 'DB_USER' "$WP_PATH/wp-config.php")
+    ORIGINAL_DB_PASSWORD=$(extract_from_wp_config 'DB_PASSWORD' "$WP_PATH/wp-config.php")
     DB_HOST=$(extract_from_wp_config 'DB_HOST' "$WP_PATH/wp-config.php")
 else
     echo "Error: wp-config.php not found."
@@ -59,6 +72,17 @@ fi
 
 # Prompt user to keep or modify the database details
 prompt_for_db_details
+
+# Check if values have changed and update wp-config.php if necessary
+if [ "$DB_NAME" != "$ORIGINAL_DB_NAME" ]; then
+    update_wp_config 'DB_NAME' "$DB_NAME" "$WP_PATH/wp-config.php"
+fi
+if [ "$DB_USER" != "$ORIGINAL_DB_USER" ]; then
+    update_wp_config 'DB_USER' "$DB_USER" "$WP_PATH/wp-config.php"
+fi
+if [ "$DB_PASSWORD" != "$ORIGINAL_DB_PASSWORD" ]; then
+    update_wp_config 'DB_PASSWORD' "$DB_PASSWORD" "$WP_PATH/wp-config.php"
+fi
 
 # Restore Database
 echo "Restoring database from $DB_DUMP_FILE..."
