@@ -1,3 +1,5 @@
+> **Note:** This repository is a bucket for unfinished / experimental code and should **not** be taken seriously. For the maintained WordPress backup & restore scripts, see [wordpress-backup-restore](https://github.com/sajidislam/wordpress-backup-restore).
+
 # WordPress Backup & Restore Scripts
 
 Bash scripts to back up and restore a WordPress site (files + database). Useful for manual backups, migrations, or scheduled cron jobs.
